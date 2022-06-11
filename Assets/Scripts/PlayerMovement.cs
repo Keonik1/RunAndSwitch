@@ -6,6 +6,7 @@ using UnityEngine;
 public class PlayerMovement : MonoBehaviour
 {
     [SerializeField] private float _defaultSpeed = 40;
+    [SerializeField] private MovementMethod _movementMethod;
 
     private float _horizontalInput;
     private float _verticalInput;
@@ -17,28 +18,34 @@ public class PlayerMovement : MonoBehaviour
         _rigidbody = GetComponent<Rigidbody>();
     }
 
-    private void FixedUpdate()
+    private void Update()
     {
         float speed = _defaultSpeed;
         _verticalInput = Input.GetAxis("Vertical");
         _horizontalInput = Input.GetAxis("Horizontal");
 
-        Vector3 movementVector = new Vector3(_horizontalInput, 0, _verticalInput).normalized;
-        
-        if (movementVector == Vector3.zero)
-            return;
-        
-        Quaternion rotation = Quaternion.LookRotation(movementVector);
-        rotation = Quaternion.RotateTowards(transform.rotation, rotation, 360 * Time.deltaTime);
-        
+        Move(_movementMethod, speed);
+    }
+    private void Move(MovementMethod movementMethod, float speed)
+    {
+        switch (movementMethod)
+        {
+            case MovementMethod.ThroughANewVector:
+                Vector3 movementVector = new Vector3(_horizontalInput, 0, _verticalInput).normalized;
+                transform.Translate(movementVector * speed * Time.deltaTime);
+                break;
+            case MovementMethod.ThroughSpeedChange:
+                if (_verticalInput != 0 && _horizontalInput != 0)
+                    speed = _defaultSpeed / Mathf.Sqrt(2);
+    
+                transform.Translate(Vector3.forward * speed * Time.deltaTime * _verticalInput);
+                transform.Translate(Vector3.right * speed * Time.deltaTime * _horizontalInput);
+                break;
+        }
+    }
 
-        // if (_horizontalInput != 0 && _verticalInput != 0)
-        // {
-        //     speed = _defaultSpeed / Mathf.Sqrt(2); 
-        //     //TODO: Заменить Math.Sqrt(2) на косинус угла между вектором движения и к горизонтальной линии
-        // }
-
-        transform.Translate(movementVector * Time.deltaTime * speed);
-        _rigidbody.MoveRotation(rotation);
+    private enum MovementMethod
+    {
+        ThroughANewVector, ThroughSpeedChange
     }
 }
